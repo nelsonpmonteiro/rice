@@ -8,6 +8,13 @@ export function checkAdminPassword(password: string): boolean {
   return password === adminPass
 }
 
+export function getAdminCookie(
+  cookiesObj: { get: (name: string) => { value: string } | undefined }
+): boolean {
+  const token = cookiesObj.get('rice_admin')?.value
+  return token === process.env.ADMIN_PASSWORD
+}
+
 // ── User authentication ──────────────────────────────────────
 
 export interface AuthUser {
