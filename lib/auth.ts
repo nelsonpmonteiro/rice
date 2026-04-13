@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { supabaseAdmin } from './supabase'
+import { supabaseAdmin } from './supabase-server'
 
 // ── Legacy admin password (kept for /admin area backward compat) ──
 export function checkAdminPassword(password: string): boolean {
