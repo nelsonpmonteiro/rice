@@ -13,10 +13,12 @@
     "react-dom": "^18",
     "@supabase/supabase-js": "^2.43.4",
     "@supabase/ssr": "^0.3.0",
+    "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "lucide-react": "^0.383.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

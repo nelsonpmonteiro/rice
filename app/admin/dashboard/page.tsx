@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { Session, InitiativeScore } from '@/lib/supabase'
@@ -385,6 +385,10 @@ export default function AdminDashboard() {
   const [showCreate, setShowCreate]   = useState(false)
   const [loading, setLoading]         = useState(true)
 
+  // Use a ref so loadSessions can read the latest selected without depending on it
+  const selectedRef = useRef(selected)
+  useEffect(() => { selectedRef.current = selected }, [selected])
+
   const loadSessions = useCallback(async () => {
     const { data } = await supabase
       .from('sessions')
@@ -392,12 +396,12 @@ export default function AdminDashboard() {
       .order('created_at', { ascending: false })
     setSessions(data ?? [])
     setLoading(false)
-    // Refresh selected if open
-    if (selected) {
-      const fresh = data?.find(s => s.id === selected.id)
+    // Refresh selected if one is open
+    if (selectedRef.current) {
+      const fresh = data?.find(s => s.id === selectedRef.current!.id)
       if (fresh) setSelected(fresh)
     }
-  }, [selected])
+  }, []) // no dependency on selected — avoids infinite loop
 
   useEffect(() => { loadSessions() }, [loadSessions])
 

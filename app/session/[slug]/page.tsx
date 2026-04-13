@@ -170,6 +170,19 @@ export default function SessionPage() {
   const [expanded, setExpanded]         = useState<string | null>(null)
   const [loading, setLoading]           = useState(true)
 
+  // Try to get logged-in user name first
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(({ user }) => {
+        if (user?.username) {
+          setParticipant(user.username)
+          localStorage.setItem(`rice_participant_${slug}`, user.username)
+        }
+      })
+      .catch(() => {/* fallback to localStorage below */})
+  }, [slug])
+
   // Load session
   useEffect(() => {
     supabase.from('sessions').select('*').eq('slug', slug).single()

@@ -19,6 +19,7 @@ export interface Session {
   description: string | null
   status: 'open' | 'closed'
   voting_open: boolean
+  group_id: string | null
   created_at: string
 }
 
@@ -60,4 +61,19 @@ export interface InitiativeScore extends Initiative {
   vote_count: number
   has_override: boolean
   override_note: string | null
+}
+
+export interface Group {
+  id: string
+  name: string
+  slug: string
+  created_at: string
+}
+
+export interface User {
+  id: string
+  username: string
+  group_id: string | null
+  role: 'admin' | 'member'
+  created_at: string
 }
