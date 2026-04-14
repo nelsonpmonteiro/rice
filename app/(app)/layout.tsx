@@ -5,8 +5,12 @@ import type { Workspace } from '@/lib/supabase/client'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+
+  // getSession() valida o JWT localmente — sem chamada de rede
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/login')
+
+  const user = session.user
 
   const { data: memberships } = await supabase
     .from('workspace_members')
