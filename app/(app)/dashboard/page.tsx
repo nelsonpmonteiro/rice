@@ -37,12 +37,12 @@ export default async function DashboardPage() {
       .eq('status', 'open')
     activeSessions = (sessions ?? []).map(s => ({
       ...s,
-      workspaceName: memberships?.find(m => m.workspace_id === s.workspace_id)?.workspaces?.name ?? '',
+      workspaceName: (memberships?.find(m => m.workspace_id === s.workspace_id)?.workspaces as { id: string; name: string } | null)?.name ?? '',
     }))
   }
 
   const wsMap = Object.fromEntries(
-    (memberships ?? []).map(m => [m.workspace_id, m.workspaces?.name ?? ''])
+    (memberships ?? []).map(m => [m.workspace_id, (m.workspaces as { id: string; name: string } | null)?.name ?? ''])
   )
 
   return (
