@@ -15,17 +15,21 @@ export async function POST(req: NextRequest) {
   const { data: member } = await supabaseAdmin
     .from('workspace_members').select('role')
     .eq('workspace_id', workspace_id).eq('user_id', user.id).single()
-  if (member?.role !== 'admin') {
-    return NextResponse.json({ error: 'Apenas admins podem criar iniciativas.' }, { status: 403 })
+  if (!member) {
+    return NextResponse.json({ error: 'Você não é membro deste workspace.' }, { status: 403 })
   }
+
+  // Admins create as 'approved'; regular members submit as 'draft' for review
+  const status = member.role === 'admin' ? 'approved' : 'draft'
 
   const { data, error } = await supabaseAdmin
     .from('initiatives')
     .insert({
       workspace_id,
-      session_id: session_id || null,
+      session_id: member.role === 'admin' ? (session_id || null) : null,
       title: title.trim(),
       description: description?.trim() || null,
+      status,
     })
     .select().single()
 

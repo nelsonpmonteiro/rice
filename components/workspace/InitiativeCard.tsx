@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { scoreColor, scoreBg } from '@/components/ui/ScoreTag'
 import VoteForm from '@/components/workspace/VoteForm'
 import OverridePanel from '@/components/workspace/OverridePanel'
+import ConfirmDeleteModal from '@/components/modals/ConfirmDeleteModal'
 import type { InitiativeScore, Vote } from '@/lib/supabase/client'
 
 function Chevron({ open }: { open: boolean }) {
@@ -24,6 +25,7 @@ export default function InitiativeCard({
   votingOpen,
   myVote,
   onRefresh,
+  onDeleted,
 }: {
   initiative: InitiativeScore
   rank: number
@@ -31,12 +33,23 @@ export default function InitiativeCard({
   votingOpen: boolean
   myVote: Vote | null
   onRefresh: () => void
+  onDeleted?: () => void
 }) {
   const [expanded,     setExpanded]  = useState(false)
   const [showOverride, setOverride]  = useState(false)
+  const [showDelete,   setShowDelete] = useState(false)
+  const [deleting,     setDeleting]  = useState(false)
 
-  const hasData  = initiative.vote_count > 0 || initiative.has_override
+  const hasData   = initiative.vote_count > 0 || initiative.has_override
   const inSession = !!initiative.session_id
+
+  async function handleDelete() {
+    setDeleting(true)
+    await fetch(`/api/initiatives/${initiative.id}`, { method: 'DELETE' })
+    setDeleting(false)
+    setShowDelete(false)
+    onDeleted?.()
+  }
 
   return (
     <div className={`rounded-xl border overflow-hidden ${scoreBg(initiative.rice_score)}`}>
@@ -179,14 +192,20 @@ export default function InitiativeCard({
             )}
           </div>
 
-          {/* Botão de ajuste (admin) */}
+          {/* Ações admin */}
           {isAdmin && (
-            <div className="px-4 pb-3 border-t border-slate-800/50 pt-3">
+            <div className="px-4 pb-3 border-t border-slate-800/50 pt-3 flex items-center justify-between">
               <button
                 onClick={() => setOverride(o => !o)}
                 className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
               >
                 {showOverride ? '↑ Fechar ajuste' : '⚡ Ajuste de score'}
+              </button>
+              <button
+                onClick={() => setShowDelete(true)}
+                className="text-xs text-slate-600 hover:text-red-400 transition-colors"
+              >
+                Excluir
               </button>
             </div>
           )}
@@ -197,6 +216,18 @@ export default function InitiativeCard({
             />
           )}
         </div>
+      )}
+
+      {showDelete && (
+        <ConfirmDeleteModal
+          mode="checkbox"
+          checkboxLabel={`Entendo que "${initiative.title}" e todos os seus votos serão permanentemente excluídos.`}
+          title="Excluir iniciativa"
+          message="Esta ação é irreversível. Os votos e scores desta iniciativa também serão perdidos."
+          onConfirm={handleDelete}
+          onClose={() => setShowDelete(false)}
+          loading={deleting}
+        />
       )}
     </div>
   )

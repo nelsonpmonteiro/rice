@@ -93,10 +93,10 @@ export default function Sidebar({
         {/* User */}
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-white truncate">{userName}</p>
+            <Link href="/settings/account" className="min-w-0 group">
+              <p className="text-sm font-medium text-white truncate group-hover:text-brand-teal transition-colors">{userName}</p>
               <p className="text-xs text-slate-600 truncate">{user.email}</p>
-            </div>
+            </Link>
             <button
               onClick={logout}
               className="text-xs text-slate-600 hover:text-white transition-colors ml-2 shrink-0"

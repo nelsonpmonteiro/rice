@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = await req.json()
-  const allowed = ['title', 'description', 'session_id', 'position']
+  const allowed = ['title', 'description', 'session_id', 'position', 'status']
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]

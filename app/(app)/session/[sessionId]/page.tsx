@@ -101,6 +101,7 @@ export default function SessionPage() {
           votingOpen={session.voting_open}
           myVote={myVotes[init.id] ?? null}
           onRefresh={load}
+          onDeleted={load}
         />
       ))}
     </main>

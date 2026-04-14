@@ -95,6 +95,7 @@ export interface Initiative {
   title: string
   description: string | null
   position: number
+  status: 'draft' | 'approved' | 'archived'
   created_at: string
 }
 

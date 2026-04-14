@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient, getClientSession } from '@/lib/supabase/client'
-import type { InitiativeScore, Session, WorkspaceMember, Workspace, Vote } from '@/lib/supabase/client'
+import type { InitiativeScore, Session, WorkspaceMember, Workspace, Vote, Initiative } from '@/lib/supabase/client'
 import InitiativeCard from '@/components/workspace/InitiativeCard'
 import SessionList from '@/components/workspace/SessionList'
+import DraftQueue from '@/components/workspace/DraftQueue'
 import MembersPanel from '@/components/workspace/MembersPanel'
 import CreateInitiativeModal from '@/components/modals/CreateInitiativeModal'
 import CreateSessionModal from '@/components/modals/CreateSessionModal'
+import WorkspaceSettingsModal from '@/components/modals/WorkspaceSettingsModal'
 import Toast from '@/components/ui/Toast'
 import Badge from '@/components/ui/Badge'
 
@@ -21,16 +23,18 @@ export default function WorkspacePage() {
 
   const [workspace,   setWorkspace]   = useState<Workspace | null>(null)
   const [initiatives, setInitiatives] = useState<InitiativeScore[]>([])
+  const [drafts,      setDrafts]      = useState<Initiative[]>([])
   const [sessions,    setSessions]    = useState<Session[]>([])
   const [members,     setMembers]     = useState<WorkspaceMember[]>([])
   const [myVotes,     setMyVotes]     = useState<Record<string, Vote>>({})
   const [myRole,      setMyRole]      = useState<'admin' | 'member' | null>(null)
   const [userId,      setUserId]      = useState<string | null>(null)
   const [tab,         setTab]         = useState<Tab>('backlog')
-  const [showCreate,  setShowCreate]  = useState(false)
-  const [showSession, setSession]     = useState(false)
-  const [toast,       setToast]       = useState<string | null>(null)
-  const [loading,     setLoading]     = useState(true)
+  const [showCreate,   setShowCreate]   = useState(false)
+  const [showSession,  setSession]      = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [toast,        setToast]        = useState<string | null>(null)
+  const [loading,      setLoading]      = useState(true)
 
   const load = useCallback(async () => {
     // Verifica sessão local (sem chamada de rede)
@@ -46,6 +50,7 @@ export default function WorkspacePage() {
     const data = await res.json()
     setWorkspace(data.workspace)
     setInitiatives(data.initiatives as InitiativeScore[])
+    setDrafts(data.drafts as Initiative[] ?? [])
     setSessions(data.sessions as Session[])
     setMembers(data.members as WorkspaceMember[])
     setMyRole(data.myRole)
@@ -117,6 +122,18 @@ export default function WorkspacePage() {
             <p className="text-slate-400 text-sm mt-0.5">{workspace.description}</p>
           )}
         </div>
+        {isAdmin && workspace && (
+          <button
+            onClick={() => setShowSettings(true)}
+            title="Configurações do workspace"
+            className="p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -130,7 +147,11 @@ export default function WorkspacePage() {
                 ? 'text-brand-teal border-brand-teal'
                 : 'text-slate-500 border-transparent hover:text-white'}`}
           >
-            {t === 'backlog' ? `Backlog (${initiatives.length})` : t === 'sessions' ? `Sessões (${activeSessions.length})` : `Membros (${members.length})`}
+            {t === 'backlog'
+              ? <>Backlog ({initiatives.length}){isAdmin && drafts.length > 0 && <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-amber-500/20 text-amber-400 rounded-full">{drafts.length}</span>}</>
+              : t === 'sessions'
+              ? `Sessões (${activeSessions.length})`
+              : `Membros (${members.length})`}
           </button>
         ))}
       </div>
@@ -142,15 +163,18 @@ export default function WorkspacePage() {
             <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
               Backlog
             </h2>
-            {isAdmin && (
-              <button
-                onClick={() => setShowCreate(true)}
-                className="px-3 py-1.5 bg-brand-teal text-brand-dark text-xs font-bold rounded-lg hover:bg-cyan-300 transition-colors"
-              >
-                + Nova iniciativa
-              </button>
-            )}
+            <button
+              onClick={() => setShowCreate(true)}
+              className="px-3 py-1.5 bg-brand-teal text-brand-dark text-xs font-bold rounded-lg hover:bg-cyan-300 transition-colors"
+            >
+              + Nova iniciativa
+            </button>
           </div>
+
+          {/* Approval queue (admin only) */}
+          {isAdmin && drafts.length > 0 && (
+            <DraftQueue drafts={drafts} onRefresh={load} />
+          )}
 
           {initiatives.length === 0 && (
             <div className="rounded-xl border border-slate-800 p-10 flex flex-col items-center gap-3 text-center">
@@ -185,6 +209,7 @@ export default function WorkspacePage() {
                 votingOpen={votingOpen}
                 myVote={myVotes[init.id] ?? null}
                 onRefresh={load}
+                onDeleted={load}
               />
             )
           })}
@@ -199,6 +224,7 @@ export default function WorkspacePage() {
           onToggleVoting={toggleVoting}
           onToggleStatus={toggleStatus}
           onCreateSession={() => setSession(true)}
+          onDeleted={load}
         />
       )}
 
@@ -218,6 +244,7 @@ export default function WorkspacePage() {
         <CreateInitiativeModal
           workspaceId={workspaceId}
           sessions={sessions}
+          isAdmin={isAdmin}
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); load() }}
         />
@@ -231,6 +258,15 @@ export default function WorkspacePage() {
       )}
 
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+
+      {showSettings && workspace && (
+        <WorkspaceSettingsModal
+          workspace={workspace}
+          onClose={() => setShowSettings(false)}
+          onUpdated={() => { setShowSettings(false); load() }}
+          onDeleted={() => { window.location.href = '/dashboard' }}
+        />
+      )}
     </main>
   )
 }
