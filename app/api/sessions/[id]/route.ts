@@ -27,8 +27,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     .eq('workspace_id', session.workspace_id).eq('user_id', user.id).single()
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  // Busca todas as iniciativas do workspace — a sessão é uma rodada de
+  // votação para o backlog completo, não um subconjunto com session_id fixo
   const { data: initiatives } = await supabaseAdmin
-    .from('initiative_scores').select('*').eq('session_id', params.id)
+    .from('initiative_scores').select('*').eq('workspace_id', session.workspace_id)
     .order('rice_score', { ascending: false, nullsFirst: false })
 
   const initIds = (initiatives ?? []).map((i: { id: string }) => i.id)
