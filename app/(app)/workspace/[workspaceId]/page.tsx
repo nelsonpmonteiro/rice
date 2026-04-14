@@ -54,7 +54,7 @@ export default function WorkspacePage() {
     setWorkspace(wsRes.data)
     setInitiatives((initRes.data ?? []) as InitiativeScore[])
     setSessions(sesRes.data ?? [])
-    setMembers((memRes.data ?? []) as WorkspaceMember[])
+    setMembers((memRes.data ?? []) as unknown as WorkspaceMember[])
 
     const me = memRes.data?.find(m => m.user_id === user.id)
     setMyRole(me?.role ?? null)

@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const workspaces = (memberships ?? []).map(m => ({
     workspace_id: m.workspace_id,
     role: m.role,
-    workspaces: m.workspaces as Workspace | null,
+    workspaces: m.workspaces as unknown as Workspace | null,
   }))
 
   return (
