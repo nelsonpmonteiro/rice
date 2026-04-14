@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/auth'
 
 async function isWorkspaceAdmin(userId: string, workspaceId: string) {
   const { data } = await supabaseAdmin
@@ -12,9 +13,9 @@ async function isWorkspaceAdmin(userId: string, workspaceId: string) {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { user } = auth
   if (!(await isWorkspaceAdmin(user.id, params.id))) {
     return NextResponse.json({ error: 'Apenas admins podem editar o workspace.' }, { status: 403 })
   }
@@ -36,9 +37,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { user } = auth
   if (!(await isWorkspaceAdmin(user.id, params.id))) {
     return NextResponse.json({ error: 'Apenas admins podem excluir o workspace.' }, { status: 403 })
   }

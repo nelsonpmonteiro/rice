@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, supabaseAdmin } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/auth'
 
 async function getAdminCount(workspaceId: string) {
   const { count } = await supabaseAdmin
@@ -14,9 +15,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string; uid: string } }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { user } = auth
 
   const { data: caller } = await supabaseAdmin
     .from('workspace_members').select('role')
@@ -54,9 +55,9 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: { id: string; uid: string } }
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireAuth()
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { user } = auth
 
   const isSelf = user.id === params.uid
   const { data: caller } = await supabaseAdmin

@@ -1,56 +1,59 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const PROJECT_REF  = SUPABASE_URL.replace(/^https?:\/\//, '').split('.')[0]
+const AUTH_COOKIE  = `sb-${PROJECT_REF}-auth-token`
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options as any)
-          )
-        },
-      },
+/** Lê a sessão diretamente do cookie — sem @supabase/ssr, sem chamada de rede. */
+function getSession(request: NextRequest) {
+  let raw = request.cookies.get(AUTH_COOKIE)?.value ?? null
+
+  if (!raw) {
+    const parts: string[] = []
+    for (let i = 0; ; i++) {
+      const chunk = request.cookies.get(`${AUTH_COOKIE}.${i}`)?.value
+      if (!chunk) break
+      parts.push(chunk)
     }
-  )
+    if (parts.length) raw = parts.join('')
+  }
 
-  // Atualiza tokens expirados e propaga cookies — sem chamada de rede extra
-  const { data: { session } } = await supabase.auth.getSession()
+  if (!raw) return null
 
+  try {
+    const session = JSON.parse(raw)
+    if (!session?.access_token) return null
+    const now = Math.floor(Date.now() / 1000)
+    if (session.expires_at && session.expires_at < now + 60) return null
+    return session
+  } catch {
+    return null
+  }
+}
+
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/api/auth/debug']
-  const isPublic = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
+  const session      = getSession(request)
+  const isAuth       = !!session
 
-  // DEBUG: log session state — remover após diagnóstico
-  console.log('[middleware]', request.nextUrl.pathname, 'session:', !!session)
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/api/auth']
+  const isPublic    = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
-  if (!session && !isPublic) {
+  if (!isAuth && !isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  if (session && isPublic) {
+  if (isAuth && (pathname === '/login' || pathname === '/register')) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

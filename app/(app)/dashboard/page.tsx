@@ -1,14 +1,15 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/auth'
 import Link from 'next/link'
 import ScoreTag, { scoreBg } from '@/components/ui/ScoreTag'
 import Badge from '@/components/ui/Badge'
 import type { InitiativeScore, Session } from '@/lib/supabase/client'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const auth = await requireAuth()
+  if (!auth) redirect('/login')
+
+  const { supabase, user } = auth
 
   // Workspaces do usuário
   const { data: memberships } = await supabase

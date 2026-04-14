@@ -1,16 +1,13 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { requireAuth } from '@/lib/auth'
 import Sidebar from '@/components/Sidebar'
 import type { Workspace } from '@/lib/supabase/client'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
+  const auth = await requireAuth()
+  if (!auth) redirect('/login')
 
-  // getSession() valida o JWT localmente — sem chamada de rede
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/login')
-
-  const user = session.user
+  const { supabase, user } = auth
 
   const { data: memberships } = await supabase
     .from('workspace_members')
@@ -20,8 +17,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const workspaces = (memberships ?? []).map(m => ({
     workspace_id: m.workspace_id,
-    role: m.role,
-    workspaces: m.workspaces as unknown as Workspace | null,
+    role:         m.role,
+    workspaces:   m.workspaces as unknown as Workspace | null,
   }))
 
   return (

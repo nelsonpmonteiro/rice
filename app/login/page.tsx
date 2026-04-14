@@ -1,35 +1,33 @@
 'use client'
 
-import { useFormState, useFormStatus } from 'react-dom'
-import { useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { loginAction } from './actions'
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="w-full py-3 rounded-xl bg-brand-teal text-brand-dark font-bold hover:bg-cyan-300 transition-colors disabled:opacity-50"
-    >
-      {pending ? 'Entrando…' : 'Entrar →'}
-    </button>
-  )
-}
 
 export default function LoginPage() {
-  const [state, action] = useFormState(loginAction, null)
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
 
-  useEffect(() => {
-    if (state && 'success' in state) {
-      // Cookies já setados no response da Server Action — full reload garante que
-      // o middleware lê os cookies corretamente na próxima requisição
+  async function login() {
+    if (!email || !password) return
+    setLoading(true)
+    setError('')
+
+    const res = await fetch('/api/auth/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    })
+
+    if (res.ok) {
       window.location.href = '/dashboard'
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error ?? 'Erro ao fazer login.')
+      setLoading(false)
     }
-  }, [state])
-
-  const errorMsg = state && 'error' in state ? state.error : null
+  }
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
@@ -40,29 +38,37 @@ export default function LoginPage() {
           <p className="text-slate-500 text-sm">Ferramenta colaborativa de priorização</p>
         </div>
 
-        <form action={action} className="space-y-3">
+        <div className="space-y-3">
           <input
             type="email"
-            name="email"
             placeholder="E-mail"
-            required
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && login()}
             autoFocus
             autoComplete="email"
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-teal"
           />
           <input
             type="password"
-            name="password"
             placeholder="Senha"
-            required
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && login()}
             autoComplete="current-password"
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-teal"
           />
 
-          {errorMsg && <p className="text-red-400 text-sm">{errorMsg}</p>}
+          {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          <SubmitButton />
-        </form>
+          <button
+            onClick={login}
+            disabled={loading || !email || !password}
+            className="w-full py-3 rounded-xl bg-brand-teal text-brand-dark font-bold hover:bg-cyan-300 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Entrando…' : 'Entrar →'}
+          </button>
+        </div>
 
         <div className="space-y-2 text-center text-sm">
           <p>
