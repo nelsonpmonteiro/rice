@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase/server'
 import Link from 'next/link'
 import ScoreTag, { scoreBg } from '@/components/ui/ScoreTag'
 import Badge from '@/components/ui/Badge'
@@ -9,10 +10,10 @@ export default async function DashboardPage() {
   const auth = await requireAuth()
   if (!auth) redirect('/login')
 
-  const { supabase, user } = auth
+  const { user } = auth
 
-  // Workspaces do usuário
-  const { data: memberships } = await supabase
+  // Workspaces do usuário — usa supabaseAdmin para evitar problemas de RLS
+  const { data: memberships } = await supabaseAdmin
     .from('workspace_members')
     .select('workspace_id, role, workspaces(id, name)')
     .eq('user_id', user.id)
@@ -24,14 +25,14 @@ export default async function DashboardPage() {
   let activeSessions: (Session & { workspaceName: string })[] = []
 
   if (workspaceIds.length > 0) {
-    const { data: scores } = await supabase
+    const { data: scores } = await supabaseAdmin
       .from('initiative_scores')
       .select('*')
       .in('workspace_id', workspaceIds)
       .order('rice_score', { ascending: false, nullsFirst: false })
     backlog = (scores ?? []) as InitiativeScore[]
 
-    const { data: sessions } = await supabase
+    const { data: sessions } = await supabaseAdmin
       .from('sessions')
       .select('*')
       .in('workspace_id', workspaceIds)
