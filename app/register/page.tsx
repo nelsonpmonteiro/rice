@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [confirm, setConfirm]       = useState('')
   const [error, setError]           = useState('')
   const [loading, setLoading]       = useState(false)
+  const [sent, setSent]             = useState(false)
 
   async function register() {
     if (!name || !email || !password || !confirm) return
@@ -23,7 +24,7 @@ export default function RegisterPage() {
     setError('')
 
     const supabase = createClient()
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name } },
@@ -32,10 +33,39 @@ export default function RegisterPage() {
     if (authError) {
       setError(authError.message.includes('already') ? 'E-mail já está em uso.' : authError.message)
       setLoading(false)
-    } else {
+      return
+    }
+
+    // Se session existe: confirmação desativada — redirecionar direto
+    if (data.session) {
       router.push('/dashboard')
       router.refresh()
+      return
     }
+
+    // session null: e-mail de confirmação enviado
+    setSent(true)
+    setLoading(false)
+  }
+
+  if (sent) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <div className="text-4xl font-black text-brand-teal">RICE</div>
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-900/10 p-6 space-y-2">
+            <p className="text-white font-semibold">Verifique seu e-mail</p>
+            <p className="text-slate-400 text-sm">
+              Enviamos um link de confirmação para <span className="text-white">{email}</span>.
+              Clique no link para ativar sua conta.
+            </p>
+          </div>
+          <Link href="/login" className="block text-sm text-brand-teal hover:underline">
+            Voltar para o login
+          </Link>
+        </div>
+      </main>
+    )
   }
 
   return (
