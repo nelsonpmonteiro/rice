@@ -23,7 +23,8 @@ export default function LoginPage() {
     })
 
     if (!res.ok) {
-      setError('E-mail ou senha incorretos.')
+      const data = await res.json()
+      setError(data.error ?? 'E-mail ou senha incorretos.')
       setLoading(false)
     } else {
       window.location.href = '/dashboard'
