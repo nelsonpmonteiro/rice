@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   const { pathname } = request.nextUrl
-  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/api/auth/debug']
   const isPublic = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   // DEBUG: log session state — remover após diagnóstico
