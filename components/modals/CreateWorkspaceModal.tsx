@@ -18,13 +18,23 @@ export default function CreateWorkspaceModal({
     if (!name.trim()) return
     setSaving(true)
     setError('')
-    const res = await fetch('/api/workspaces', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description: desc }),
-    })
-    if (res.ok) { onCreated(); onClose() }
-    else { setError((await res.json()).error || 'Erro ao criar workspace.'); setSaving(false) }
+    try {
+      const res = await fetch('/api/workspaces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: desc }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        onCreated()
+      } else {
+        setError(data.error || `Erro ${res.status} ao criar workspace.`)
+        setSaving(false)
+      }
+    } catch (e) {
+      setError('Erro de rede. Tente novamente.')
+      setSaving(false)
+    }
   }
 
   return (

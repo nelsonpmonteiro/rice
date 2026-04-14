@@ -1,9 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { Workspace } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import CreateWorkspaceModal from '@/components/modals/CreateWorkspaceModal'
@@ -16,14 +15,11 @@ export default function Sidebar({
   workspaces: { workspace_id: string; role: string; workspaces: Workspace | null }[]
 }) {
   const pathname = usePathname()
-  const router   = useRouter()
   const [showCreate, setShowCreate] = useState(false)
 
   async function logout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+    await fetch('/api/auth/logout', { method: 'POST' })
+    window.location.href = '/login'
   }
 
   const userName = (user.user_metadata?.name as string) || user.email || 'Usuário'
@@ -102,7 +98,7 @@ export default function Sidebar({
       {showCreate && (
         <CreateWorkspaceModal
           onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); router.refresh() }}
+          onCreated={() => { window.location.href = '/dashboard' }}
         />
       )}
     </>
