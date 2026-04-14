@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           // Atualiza os cookies no request para que o resto do middleware os veja
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           // Recria supabaseResponse com os cookies atualizados (token refresh)
