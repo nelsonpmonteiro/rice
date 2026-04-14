@@ -31,6 +31,9 @@ export async function middleware(request: NextRequest) {
   const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']
   const isPublic = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
+  // DEBUG: log session state — remover após diagnóstico
+  console.log('[middleware]', request.nextUrl.pathname, 'session:', !!session)
+
   if (!session && !isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'

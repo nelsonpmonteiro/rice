@@ -16,14 +16,14 @@ export async function loginAction(
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
+    console.error('[login] signInWithPassword error:', error.message)
     return { error: error.message }
   }
 
-  // Não chamar redirect() aqui — useFormState intercepta antes do Next.js processar.
-  // Os cookies de sessão já foram setados via Set-Cookie no response desta Server Action.
-  // O client detecta { success: true } e navega com window.location.href (full reload).
+  console.log('[login] signInWithPassword success, session:', !!data.session, 'user:', data.user?.id)
+
   return { success: true }
 }
