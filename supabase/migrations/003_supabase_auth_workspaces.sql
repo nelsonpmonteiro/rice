@@ -185,7 +185,9 @@ CREATE POLICY "Workspace admins can manage overrides"
   );
 
 -- ── 13. Recriar view initiative_scores com workspace_id ───────
-CREATE OR REPLACE VIEW initiative_scores AS
+-- DROP antes de recriar — CREATE OR REPLACE não pode reordenar colunas existentes
+DROP VIEW IF EXISTS initiative_scores;
+CREATE VIEW initiative_scores AS
 SELECT
   i.id,
   i.session_id,
