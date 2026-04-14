@@ -50,7 +50,7 @@ export default function OverridePanel({
   return (
     <div className="p-4 border-t border-slate-800 bg-amber-950/20 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">⚡ Ajuste manual (Override)</p>
+        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">⚡ Ajuste de score</p>
         {initiative.has_override && (
           <button
             onClick={remove}
@@ -65,13 +65,13 @@ export default function OverridePanel({
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div>
-          <label className="text-xs text-violet-400 mb-1 block">Reach</label>
+          <label className="text-xs text-violet-400 mb-1 block">Alcance</label>
           <input type="number" min={0} value={ovReach} onChange={e => setOvReach(e.target.value)}
             placeholder="ex: 60"
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-amber-500" />
         </div>
         <div>
-          <label className="text-xs text-sky-400 mb-1 block">Impact</label>
+          <label className="text-xs text-sky-400 mb-1 block">Impacto</label>
           <select value={ovImpact} onChange={e => setOvImpact(e.target.value)}
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-amber-500">
             <option value="">—</option>
@@ -79,7 +79,7 @@ export default function OverridePanel({
           </select>
         </div>
         <div>
-          <label className="text-xs text-emerald-400 mb-1 block">Confidence</label>
+          <label className="text-xs text-emerald-400 mb-1 block">Confiança</label>
           <select value={ovConf} onChange={e => setOvConf(e.target.value)}
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-amber-500">
             <option value="">—</option>
@@ -87,7 +87,7 @@ export default function OverridePanel({
           </select>
         </div>
         <div>
-          <label className="text-xs text-amber-400 mb-1 block">Effort</label>
+          <label className="text-xs text-amber-400 mb-1 block">Esforço</label>
           <input type="number" min={0.25} step={0.25} value={ovEffort} onChange={e => setOvEffort(e.target.value)}
             placeholder="ex: 2.5"
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-amber-500" />

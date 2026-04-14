@@ -51,18 +51,30 @@ export default function Sidebar({
               {workspaces.map(({ workspace_id, role, workspaces: ws }) => {
                 if (!ws) return null
                 const active = pathname.startsWith(`/workspace/${workspace_id}`)
+                const avatarColors = [
+                  'bg-violet-700', 'bg-sky-700', 'bg-emerald-700',
+                  'bg-amber-700',  'bg-rose-700', 'bg-teal-700',
+                ]
+                const colorIdx = workspace_id.charCodeAt(workspace_id.length - 1) % avatarColors.length
+                const initial  = ws.name.charAt(0).toUpperCase()
                 return (
                   <Link
                     key={workspace_id}
                     href={`/workspace/${workspace_id}`}
+                    title={ws.name}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                       ${active
                         ? 'bg-brand-teal/20 text-brand-teal font-semibold'
                         : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                   >
-                    <span className="truncate">{ws.name}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-6 h-6 rounded-md ${avatarColors[colorIdx]} flex items-center justify-center text-[10px] font-bold text-white shrink-0`}>
+                        {initial}
+                      </span>
+                      <span className="truncate">{ws.name}</span>
+                    </div>
                     {role === 'admin' && (
-                      <span className="text-xs text-brand-teal/60 shrink-0 ml-1">admin</span>
+                      <span className="text-[10px] text-brand-teal/60 shrink-0 ml-1">admin</span>
                     )}
                   </Link>
                 )

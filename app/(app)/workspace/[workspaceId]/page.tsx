@@ -140,24 +140,35 @@ export default function WorkspacePage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-              Iniciativas priorizadas
+              Backlog
             </h2>
             {isAdmin && (
               <button
                 onClick={() => setShowCreate(true)}
                 className="px-3 py-1.5 bg-brand-teal text-brand-dark text-xs font-bold rounded-lg hover:bg-cyan-300 transition-colors"
               >
-                + Iniciativa
+                + Nova iniciativa
               </button>
             )}
           </div>
 
           {initiatives.length === 0 && (
-            <div className="rounded-xl border border-slate-800 p-8 text-center text-slate-500 text-sm">
-              Nenhuma iniciativa ainda.{' '}
+            <div className="rounded-xl border border-slate-800 p-10 flex flex-col items-center gap-3 text-center">
+              <svg className="w-12 h-12 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <div>
+                <p className="text-white font-semibold">Nenhuma iniciativa ainda</p>
+                <p className="text-slate-500 text-sm mt-1">
+                  Adicione iniciativas ao backlog para começar a priorizar com o seu time.
+                </p>
+              </div>
               {isAdmin && (
-                <button onClick={() => setShowCreate(true)} className="text-brand-teal hover:underline">
-                  Adicionar a primeira →
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="mt-1 px-4 py-2 bg-brand-teal text-brand-dark text-sm font-bold rounded-lg hover:bg-cyan-300 transition-colors"
+                >
+                  + Nova iniciativa
                 </button>
               )}
             </div>
