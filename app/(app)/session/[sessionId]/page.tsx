@@ -12,7 +12,6 @@ export default function SessionPage() {
   const params    = useParams()
   const router    = useRouter()
   const sessionId = params.sessionId as string
-  const supabase  = createClient()
 
   const [session,     setSession]     = useState<Session | null>(null)
   const [initiatives, setInitiatives] = useState<InitiativeScore[]>([])
@@ -22,50 +21,39 @@ export default function SessionPage() {
   const [loading,     setLoading]     = useState(true)
 
   const load = useCallback(async () => {
-    const session = getClientSession()
-    const user = session?.user ?? null
-    if (!user) { router.push('/login'); return }
-    setUserId(user.id)
+    const clientSession = getClientSession()
+    if (!clientSession?.user) { router.push('/login'); return }
+    setUserId(clientSession.user.id)
 
-    const { data: ses } = await supabase.from('sessions').select('*').eq('id', sessionId).single()
-    if (!ses) { router.push('/dashboard'); return }
-    setSession(ses)
+    // Busca dados via API route (usa supabaseAdmin no servidor — ignora RLS)
+    const res = await fetch(`/api/sessions/${sessionId}`)
+    if (res.status === 401) { router.push('/login'); return }
+    if (res.status === 403 || res.status === 404 || !res.ok) { router.push('/dashboard'); return }
 
-    // Verificar membership
-    const { data: member } = await supabase
-      .from('workspace_members').select('role')
-      .eq('workspace_id', ses.workspace_id).eq('user_id', user.id).single()
-    if (!member) { router.push('/dashboard'); return }
-    setIsAdmin(member.role === 'admin')
+    const data = await res.json()
+    setSession(data.session as Session)
+    setInitiatives(data.initiatives as InitiativeScore[])
+    setIsAdmin(data.myRole === 'admin')
 
-    const { data: inits } = await supabase
-      .from('initiative_scores').select('*').eq('session_id', sessionId)
-      .order('rice_score', { ascending: false, nullsFirst: false })
-    setInitiatives((inits ?? []) as InitiativeScore[])
-
-    const initIds = (inits ?? []).map((i: InitiativeScore) => i.id)
-    if (initIds.length > 0) {
-      const { data: votes } = await supabase
-        .from('votes').select('*').eq('user_id', user.id).in('initiative_id', initIds)
-      const map: Record<string, Vote> = {}
-      votes?.forEach(v => { map[v.initiative_id] = v })
-      setMyVotes(map)
-    }
+    const map: Record<string, Vote> = {}
+    ;(data.myVotes as Vote[]).forEach(v => { map[v.initiative_id] = v })
+    setMyVotes(map)
 
     setLoading(false)
-  }, [sessionId, router, supabase])
+  }, [sessionId, router])
 
   useEffect(() => { load() }, [load])
 
-  // Realtime: atualizar quando votos, overrides ou a sessão mudam
+  // Realtime — reconecta quando há mudanças
   useEffect(() => {
+    const supabase = createClient()
     const ch = supabase.channel(`session-${sessionId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'overrides' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, load)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [sessionId, load, supabase])
+  }, [sessionId, load])
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center text-slate-500">Carregando…</div>

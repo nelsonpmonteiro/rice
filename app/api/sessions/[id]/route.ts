@@ -13,6 +13,38 @@ async function requireAdmin(userId: string, sessionId: string) {
   return member?.role === 'admin'
 }
 
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await requireAuth()
+  if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { user } = auth
+
+  const { data: session } = await supabaseAdmin
+    .from('sessions').select('*').eq('id', params.id).single()
+  if (!session) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { data: member } = await supabaseAdmin
+    .from('workspace_members').select('role')
+    .eq('workspace_id', session.workspace_id).eq('user_id', user.id).single()
+  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { data: initiatives } = await supabaseAdmin
+    .from('initiative_scores').select('*').eq('session_id', params.id)
+    .order('rice_score', { ascending: false, nullsFirst: false })
+
+  const initIds = (initiatives ?? []).map((i: { id: string }) => i.id)
+  const { data: votes } = initIds.length > 0
+    ? await supabaseAdmin.from('votes').select('*').eq('user_id', user.id).in('initiative_id', initIds)
+    : { data: [] }
+
+  return NextResponse.json({
+    session,
+    initiatives: initiatives ?? [],
+    myVotes:     votes ?? [],
+    myRole:      member.role,
+    userId:      user.id,
+  })
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireAuth()
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
