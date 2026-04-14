@@ -1,30 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useFormState, useFormStatus } from 'react-dom'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { loginAction } from './actions'
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full py-3 rounded-xl bg-brand-teal text-brand-dark font-bold hover:bg-cyan-300 transition-colors disabled:opacity-50"
+    >
+      {pending ? 'Entrando…' : 'Entrar →'}
+    </button>
+  )
+}
 
 export default function LoginPage() {
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
-
-  async function login() {
-    if (!email || !password) return
-    setLoading(true)
-    setError('')
-
-    const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (authError) {
-      setError(authError.message)
-      setLoading(false)
-    } else {
-      window.location.replace('/dashboard')
-    }
-  }
+  const [state, action] = useFormState(loginAction, null)
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
@@ -35,37 +29,31 @@ export default function LoginPage() {
           <p className="text-slate-500 text-sm">Ferramenta colaborativa de priorização</p>
         </div>
 
-        <div className="space-y-3">
+        <form action={action} className="space-y-3">
           <input
             type="email"
+            name="email"
             placeholder="E-mail"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && login()}
+            required
             autoFocus
             autoComplete="email"
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-teal"
           />
           <input
             type="password"
+            name="password"
             placeholder="Senha"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && login()}
+            required
             autoComplete="current-password"
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-teal"
           />
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {state?.error && (
+            <p className="text-red-400 text-sm">{state.error}</p>
+          )}
 
-          <button
-            onClick={login}
-            disabled={loading || !email || !password}
-            className="w-full py-3 rounded-xl bg-brand-teal text-brand-dark font-bold hover:bg-cyan-300 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Entrando…' : 'Entrar →'}
-          </button>
-        </div>
+          <SubmitButton />
+        </form>
 
         <div className="space-y-2 text-center text-sm">
           <p>
