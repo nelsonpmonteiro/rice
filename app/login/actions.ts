@@ -1,9 +1,8 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export type LoginState = { error: string } | null
+export type LoginState = { error: string } | { success: true } | null
 
 export async function loginAction(
   _prevState: LoginState,
@@ -23,6 +22,8 @@ export async function loginAction(
     return { error: error.message }
   }
 
-  // redirect lança internamente — cookies já foram setados via Set-Cookie header
-  redirect('/dashboard')
+  // Não chamar redirect() aqui — useFormState intercepta antes do Next.js processar.
+  // Os cookies de sessão já foram setados via Set-Cookie no response desta Server Action.
+  // O client detecta { success: true } e navega com window.location.href (full reload).
+  return { success: true }
 }

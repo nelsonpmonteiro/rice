@@ -1,6 +1,7 @@
 'use client'
 
 import { useFormState, useFormStatus } from 'react-dom'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { loginAction } from './actions'
 
@@ -19,6 +20,16 @@ function SubmitButton() {
 
 export default function LoginPage() {
   const [state, action] = useFormState(loginAction, null)
+
+  useEffect(() => {
+    if (state && 'success' in state) {
+      // Cookies já setados no response da Server Action — full reload garante que
+      // o middleware lê os cookies corretamente na próxima requisição
+      window.location.href = '/dashboard'
+    }
+  }, [state])
+
+  const errorMsg = state && 'error' in state ? state.error : null
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
@@ -48,9 +59,7 @@ export default function LoginPage() {
             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-brand-teal"
           />
 
-          {state?.error && (
-            <p className="text-red-400 text-sm">{state.error}</p>
-          )}
+          {errorMsg && <p className="text-red-400 text-sm">{errorMsg}</p>}
 
           <SubmitButton />
         </form>
