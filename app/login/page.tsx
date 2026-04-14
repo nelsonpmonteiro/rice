@@ -24,8 +24,7 @@ export default function LoginPage() {
       setError('E-mail ou senha incorretos.')
       setLoading(false)
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      window.location.href = '/dashboard'
     }
   }
 
