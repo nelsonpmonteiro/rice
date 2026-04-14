@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getClientSession } from '@/lib/supabase/client'
 import type { Session, InitiativeScore, Vote } from '@/lib/supabase/client'
 import InitiativeCard from '@/components/workspace/InitiativeCard'
 import Badge from '@/components/ui/Badge'
@@ -22,7 +22,8 @@ export default function SessionPage() {
   const [loading,     setLoading]     = useState(true)
 
   const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
+    const session = getClientSession()
+    const user = session?.user ?? null
     if (!user) { router.push('/login'); return }
     setUserId(user.id)
 
