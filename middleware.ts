@@ -1,51 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createMiddlewareClient } from '@/lib/supabase/middleware'
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  let response = NextResponse.next({ request })
 
-  // ── Legacy admin area (env-var password) ─────────────────────
-  if (pathname.startsWith('/admin/dashboard') || pathname.startsWith('/api/admin')) {
-    if (pathname === '/api/admin/login') return NextResponse.next()
+  const supabase = createMiddlewareClient(request, response)
 
-    const adminCookie = req.cookies.get('rice_admin')?.value
-    const adminPass   = process.env.ADMIN_PASSWORD
+  // getUser() valida o token no servidor — nunca usar getSession() em middleware
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!adminCookie || !adminPass || adminCookie !== adminPass) {
-      if (pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
-      return NextResponse.redirect(new URL('/admin', req.url))
-    }
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']
+  const isPublicPath = publicPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
+
+  // Não autenticado tentando acessar área protegida
+  if (!user && !isPublicPath) {
+    const loginUrl = new URL('/login', request.url)
+    if (pathname !== '/') loginUrl.searchParams.set('next', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // ── New user auth (username + password) ──────────────────────
-  // Protected: / and /session/*
-  // Public: /login, /dashboard/*, /admin, /admin/dashboard, /api/*
-  const isProtected =
-    pathname === '/' ||
-    pathname.startsWith('/session/')
-
-  if (isProtected) {
-    const sessionToken = req.cookies.get('rice_session')?.value
-    if (!sessionToken) {
-      const loginUrl = new URL('/login', req.url)
-      // Preserve the destination so we can redirect back after login
-      if (pathname !== '/') loginUrl.searchParams.set('next', pathname)
-      return NextResponse.redirect(loginUrl)
-    }
+  // Autenticado tentando acessar páginas de auth → redirecionar para dashboard
+  if (user && isPublicPath) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Redirect /login to / if already authenticated
-  if (pathname === '/login') {
-    const sessionToken = req.cookies.get('rice_session')?.value
-    if (sessionToken) {
-      return NextResponse.redirect(new URL('/', req.url))
-    }
-  }
-
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
-  matcher: ['/', '/login', '/session/:path*', '/admin/dashboard/:path*', '/api/admin/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
