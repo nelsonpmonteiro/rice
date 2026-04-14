@@ -18,7 +18,6 @@ export default function WorkspacePage() {
   const params        = useParams()
   const router        = useRouter()
   const workspaceId   = params.workspaceId as string
-  const supabase      = createClient()
 
   const [workspace,   setWorkspace]   = useState<Workspace | null>(null)
   const [initiatives, setInitiatives] = useState<InitiativeScore[]>([])
@@ -34,50 +33,42 @@ export default function WorkspacePage() {
   const [loading,     setLoading]     = useState(true)
 
   const load = useCallback(async () => {
-    const session = getClientSession()
-    const user = session?.user ?? null
-    if (!user) { router.push('/login'); return }
-    setUserId(user.id)
+    // Verifica sessão local (sem chamada de rede)
+    const clientSession = getClientSession()
+    if (!clientSession?.user) { router.push('/login'); return }
+    setUserId(clientSession.user.id)
 
-    const [wsRes, initRes, sesRes, memRes] = await Promise.all([
-      supabase.from('workspaces').select('*').eq('id', workspaceId).single(),
-      supabase.from('initiative_scores').select('*').eq('workspace_id', workspaceId)
-        .order('rice_score', { ascending: false, nullsFirst: false }),
-      supabase.from('sessions').select('*').eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false }),
-      supabase.from('workspace_members')
-        .select('*, profiles(id, name)')
-        .eq('workspace_id', workspaceId),
-    ])
+    // Busca dados via API route (usa supabaseAdmin no servidor — ignora RLS)
+    const res = await fetch(`/api/workspaces/${workspaceId}`)
+    if (res.status === 401) { router.push('/login'); return }
+    if (res.status === 403 || !res.ok) { router.push('/dashboard'); return }
 
-    if (!wsRes.data) { router.push('/dashboard'); return }
+    const data = await res.json()
+    setWorkspace(data.workspace)
+    setInitiatives(data.initiatives as InitiativeScore[])
+    setSessions(data.sessions as Session[])
+    setMembers(data.members as WorkspaceMember[])
+    setMyRole(data.myRole)
 
-    setWorkspace(wsRes.data)
-    setInitiatives((initRes.data ?? []) as InitiativeScore[])
-    setSessions(sesRes.data ?? [])
-    setMembers((memRes.data ?? []) as unknown as WorkspaceMember[])
-
-    const me = memRes.data?.find(m => m.user_id === user.id)
-    setMyRole(me?.role ?? null)
-    if (!me) { router.push('/dashboard'); return } // não é membro
-
-    // Votos do usuário
-    const initIds = (initRes.data ?? []).map((i: InitiativeScore) => i.id)
+    // Votos do usuário (ainda usa cliente browser — votes table pode ter RLS pública ou ser lida via API)
+    const supabase = createClient()
+    const initIds = (data.initiatives as InitiativeScore[]).map((i) => i.id)
     if (initIds.length > 0) {
       const { data: votes } = await supabase
-        .from('votes').select('*').eq('user_id', user.id).in('initiative_id', initIds)
+        .from('votes').select('*').eq('user_id', clientSession.user.id).in('initiative_id', initIds)
       const map: Record<string, Vote> = {}
       votes?.forEach(v => { map[v.initiative_id] = v })
       setMyVotes(map)
     }
 
     setLoading(false)
-  }, [workspaceId, router, supabase])
+  }, [workspaceId, router])
 
   useEffect(() => { load() }, [load])
 
-  // Realtime
+  // Realtime — reconecta quando há mudanças
   useEffect(() => {
+    const supabase = createClient()
     const ch = supabase.channel(`ws-${workspaceId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'overrides' }, load)
@@ -86,7 +77,7 @@ export default function WorkspacePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_members' }, load)
       .subscribe()
     return () => { supabase.removeChannel(ch) }
-  }, [workspaceId, load, supabase])
+  }, [workspaceId, load])
 
   async function toggleVoting(session: Session) {
     await fetch(`/api/sessions/${session.id}`, {
@@ -106,7 +97,7 @@ export default function WorkspacePage() {
     load()
   }
 
-  const isAdmin      = myRole === 'admin'
+  const isAdmin        = myRole === 'admin'
   const activeSessions = sessions.filter(s => s.status === 'open')
 
   if (loading) return (
