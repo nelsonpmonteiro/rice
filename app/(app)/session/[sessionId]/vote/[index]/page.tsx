@@ -178,7 +178,7 @@ export default function VoteIndexPage() {
   const existingVote = data.myVotes[initiative.id]
 
   // Prefill from existing vote (confidence stored as 0–1, display as %)
-  const initial: Partial<VoteFields> = getDraftForIdx(idx) ?? (existingVote ? {
+  const initial: Partial<VoteFields> | undefined = getDraftForIdx(idx) ?? (existingVote ? {
     reach:      existingVote.reach,
     impact:     existingVote.impact,
     confidence: Math.round(existingVote.confidence * 100),
