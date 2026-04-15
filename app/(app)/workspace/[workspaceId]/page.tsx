@@ -8,6 +8,7 @@ import InitiativeCard from '@/components/workspace/InitiativeCard'
 import SessionList from '@/components/workspace/SessionList'
 import DraftQueue from '@/components/workspace/DraftQueue'
 import MembersPanel from '@/components/workspace/MembersPanel'
+import SessionBanner from '@/components/workspace/SessionBanner'
 import CreateInitiativeModal from '@/components/modals/CreateInitiativeModal'
 import CreateSessionModal from '@/components/modals/CreateSessionModal'
 import WorkspaceSettingsModal from '@/components/modals/WorkspaceSettingsModal'
@@ -155,6 +156,20 @@ export default function WorkspacePage() {
           </button>
         ))}
       </div>
+
+      {/* Session banners — shown above backlog for open sessions */}
+      {tab === 'backlog' && activeSessions.length > 0 && (
+        <div className="space-y-2">
+          {activeSessions.map(s => (
+            <SessionBanner
+              key={s.id}
+              session={s}
+              hasVoted={Object.keys(myVotes).length > 0}
+              initiativeCount={initiatives.length}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Backlog tab */}
       {tab === 'backlog' && (

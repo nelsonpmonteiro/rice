@@ -38,12 +38,23 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     ? await supabaseAdmin.from('votes').select('*').eq('user_id', user.id).in('initiative_id', initIds)
     : { data: [] }
 
+  // Participation counts (used by voting flow pages)
+  const [{ data: voterRows }, { count: memberCount }] = await Promise.all([
+    supabaseAdmin.from('votes').select('user_id').eq('session_id', params.id),
+    supabaseAdmin.from('workspace_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', session.workspace_id),
+  ])
+  const voterCount = new Set((voterRows ?? []).map((v: { user_id: string }) => v.user_id)).size
+
   return NextResponse.json({
     session,
     initiatives: initiatives ?? [],
     myVotes:     votes ?? [],
     myRole:      member.role,
     userId:      user.id,
+    voterCount,
+    memberCount: memberCount ?? 0,
   })
 }
 
