@@ -143,7 +143,7 @@ export default function VoteForm({
       <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
         <div className="text-sm text-slate-400">
           Score estimado:{' '}
-          {previewValid
+          {previewValid && preview != null
             ? <span className={`font-black text-lg ${preview >= 50 ? 'text-emerald-400' : preview >= 20 ? 'text-yellow-400' : 'text-red-400'}`}>
                 {preview}
               </span>
