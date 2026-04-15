@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function CreateSessionModal({
   workspaceId,
@@ -11,6 +12,7 @@ export default function CreateSessionModal({
   onClose: () => void
   onCreated: () => void
 }) {
+  const router = useRouter()
   const [name, setName]     = useState('')
   const [desc, setDesc]     = useState('')
   const [saving, setSaving] = useState(false)
@@ -25,8 +27,15 @@ export default function CreateSessionModal({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ workspace_id: workspaceId, name, description: desc }),
     })
-    if (res.ok) { onCreated(); onClose() }
-    else { setError((await res.json()).error || 'Erro ao criar sessão.'); setSaving(false) }
+    if (res.ok) {
+      const session = await res.json()
+      onCreated()
+      onClose()
+      router.push(`/session/${session.id}/compose`)
+    } else {
+      setError((await res.json()).error || 'Erro ao criar sessão.')
+      setSaving(false)
+    }
   }
 
   return (

@@ -139,8 +139,8 @@ export default function SessionPage() {
       <div className={`grid gap-6 ${isAdmin ? 'lg:grid-cols-3' : ''}`}>
         {/* Initiatives list */}
         <div className={`space-y-3 ${isAdmin ? 'lg:col-span-2' : ''}`}>
-          {/* Vote button (non-admin, voting open) */}
-          {!isAdmin && session.voting_open && (
+          {/* Vote button — visible for everyone (including admin) when voting is open */}
+          {session.voting_open && (
             <Link
               href={`/session/${sessionId}/vote/briefing`}
               className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-brand-teal text-brand-dark font-semibold text-sm hover:bg-cyan-300 transition-colors"
