@@ -83,8 +83,9 @@ export interface Session {
   workspace_id: string
   name: string
   description: string | null
-  status: 'open' | 'closed'
+  status: 'draft' | 'open' | 'closed' | 'archived'
   voting_open: boolean
+  closed_at: string | null
   created_at: string
 }
 

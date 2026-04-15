@@ -69,6 +69,42 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = await req.json()
   const { id: _id, ...updates } = body
 
+  // State transition validations
+  if (updates.status) {
+    const { data: current } = await supabaseAdmin
+      .from('sessions').select('status, voting_open').eq('id', params.id).single()
+
+    if (!current) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    const from = current.status as string
+    const to   = updates.status as string
+
+    if (from === 'archived') {
+      return NextResponse.json({ error: 'Sessões arquivadas não podem ser alteradas.' }, { status: 400 })
+    }
+    if (from === 'closed' && to !== 'archived') {
+      return NextResponse.json({ error: 'Sessão encerrada é irreversível. Só pode ser arquivada.' }, { status: 400 })
+    }
+    if (from === 'open' && to === 'archived') {
+      return NextResponse.json({ error: 'Encerre a sessão antes de arquivar.' }, { status: 400 })
+    }
+    if (from === 'draft' && to === 'open') {
+      const { count } = await supabaseAdmin
+        .from('session_initiatives')
+        .select('*', { count: 'exact', head: true })
+        .eq('session_id', params.id)
+      if ((count ?? 0) < 1) {
+        return NextResponse.json({ error: 'Adicione pelo menos uma iniciativa antes de publicar.' }, { status: 400 })
+      }
+    }
+
+    // Auto-set closed_at + close voting when closing
+    if (to === 'closed') {
+      updates.closed_at   = new Date().toISOString()
+      updates.voting_open = false
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('sessions').update(updates).eq('id', params.id).select().single()
 
