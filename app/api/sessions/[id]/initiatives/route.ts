@@ -105,12 +105,9 @@ export async function POST(
       .eq('initiative_id', id)
       .neq('session_id', params.id)
 
-    const hasConflict = (conflict ?? []).some((c: { sessions: { voting_open: boolean }[] | { voting_open: boolean } | null }) => {
-      const s = c.sessions
-      if (!s) return false
-      if (Array.isArray(s)) return s.some(sess => sess.voting_open === true)
-      return s.voting_open === true
-    })
+    const hasConflict = (conflict ?? []).some((c: { sessions: { voting_open: boolean }[] }) =>
+      Array.isArray(c.sessions) && c.sessions.some(s => s.voting_open === true)
+    )
     if (hasConflict) { results.push({ id, status: 'conflict' }); continue }
 
     const { error } = await supabaseAdmin

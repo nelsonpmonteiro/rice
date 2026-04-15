@@ -34,13 +34,16 @@ export async function GET(
 
   const voterSet = new Set((voterRows ?? []).map(v => v.user_id))
 
-  const list = (members ?? []).map(m => ({
-    user_id: m.user_id,
-    role:    m.role,
-    name:    (m.profiles as unknown as { name: string; email: string } | null)?.name ?? 'Usuário',
-    email:   (m.profiles as unknown as { name: string; email: string } | null)?.email ?? '',
-    voted:   voterSet.has(m.user_id),
-  }))
+  const list = (members ?? []).map(m => {
+    const p = (m.profiles as { name: string; email: string }[])?.[0]
+    return {
+      user_id: m.user_id,
+      role:    m.role,
+      name:    p?.name  ?? 'Usuário',
+      email:   p?.email ?? '',
+      voted:   voterSet.has(m.user_id),
+    }
+  })
 
   return NextResponse.json({ users: list })
 }

@@ -53,10 +53,10 @@ export async function GET(
     const score = v.effort > 0
       ? Math.round((v.reach * v.impact * v.confidence) / v.effort * 10) / 10
       : null
-    const p = v.profiles as unknown as { name: string; email: string } | null
-    const i = v.initiatives as unknown as { title: string } | null
+    const p = (v.profiles as { name: string; email: string }[])?.[0]
+    const i = (v.initiatives as { title: string }[])?.[0]
     return row([
-      p?.name ?? '',
+      p?.name  ?? '',
       p?.email ?? '',
       i?.title ?? '',
       v.reach,

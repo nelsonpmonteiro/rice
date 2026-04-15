@@ -55,7 +55,9 @@ export async function GET(
 
   const conflictSet = new Set(
     (conflictRows ?? [])
-      .filter((r: { sessions: { voting_open: boolean } | null }) => r.sessions?.voting_open === true)
+      .filter((r: { sessions: { voting_open: boolean }[] }) =>
+        Array.isArray(r.sessions) && r.sessions.some(s => s.voting_open === true)
+      )
       .map((r: { initiative_id: string }) => r.initiative_id)
   )
 

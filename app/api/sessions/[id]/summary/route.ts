@@ -55,10 +55,10 @@ export async function GET(
 
   const not_voted = (allMembers ?? [])
     .filter((m: { user_id: string }) => !votedSet.has(m.user_id))
-    .map((m: { profiles: { name: string; email: string } | null }) => ({
-      name:  m.profiles?.name  ?? '(sem nome)',
-      email: m.profiles?.email ?? '',
-    }))
+    .map((m: { profiles: { name: string; email: string }[] }) => {
+      const p = m.profiles?.[0]
+      return { name: p?.name ?? '(sem nome)', email: p?.email ?? '' }
+    })
 
   return NextResponse.json({
     member_count:     memberCount     ?? 0,
